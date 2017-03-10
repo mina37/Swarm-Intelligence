@@ -33,7 +33,7 @@ void loop()
 {
   unsigned int x = 0;
   x = ping();
-  if(x!=0)
+  if(x!=0) //due to a problem that cause it to read "0" a lot
     Serial.println(x);
   delay(400); //delay 1/4 seconds.
 }
