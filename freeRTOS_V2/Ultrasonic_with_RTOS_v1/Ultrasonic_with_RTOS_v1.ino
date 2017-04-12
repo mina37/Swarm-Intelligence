@@ -12,6 +12,7 @@ unsigned int UltraSonicValue;     //actual normalized reading of the ultrasonic
 void MainTask(void * param)
 {
   Serial.println("in main task"); //for debugging
+  char zero = 0;
   for(char i = 0;i<10;i++)
   {
     xQueueSend( UltraSonicQ,( void * ) NULL, (TickType_t )0);      //fills the queue initially with zeros
