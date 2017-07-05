@@ -131,12 +131,13 @@ void vMoveStraight(void * param){
 
 unsigned long prevRight = 0;
   unsigned long prevLeft = 0;
-  MotorDriverLeft(LPWM,1);
+  MotorDriverRight(RPWM,1)
+  
 for(;;)
 {
   signed int e = (LineDetectorCounterRight - prevRight) - (LineDetectorCounterLeft - prevLeft);
-  RPWM = 160-(30*e);
-    MotorDriverRight(RPWM,1)
+  LPWM = 160-(30*e);
+    MotorDriverLeft(LPWM,1);
     prevRight = LineDetectorCounterRight;
     prevLeft = LineDetectorCounterLeft;
     vTaskDelay(10);
