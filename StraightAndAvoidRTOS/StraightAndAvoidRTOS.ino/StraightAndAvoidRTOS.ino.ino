@@ -1,13 +1,8 @@
 #include <SPI.h>
 #include <RF24.h>
 #include <BlueSM.h>
-//#include <colorsensor.h>
-//#include <linetracker.h>
-//#include <motordriver.h>
-//#include <PinsDefinition.h>
-//#include <RFnetwork.h>
-//#include <ultrasonic.h>
-//#include <Arduino_FreeRTOS.h>
+
+
 #define BLUE 0
 #define RED 1
 #define GREEN 2
@@ -28,107 +23,90 @@
 #define stablePWM 180
 #define deltaPWM 5
 
-unsigned char minimum(unsigned char& x,unsigned char &y,unsigned char&z){
-  if (x<y){
-    if (x<z){
-      return 0;
-      }
-      else{
-        
-        return 2;
-      
-        }
+unsigned char dist_l      = 0;
+unsigned char dist_m      = 0;
+unsigned char dist_r      = 0;
+unsigned char maxReturned = 0;
 
-    }
-    else {
-      if (y<z){
-        return 1;
-        
-        }
-        else {
-          return 2; 
-          }
-      }
-  
-  }
 
-unsigned char maximum (unsigned char& a,unsigned char& b,unsigned char& c) //maximum should have type int.
-{
-   if(a>b)
-   {
-      if(a>c)
-      {
-         return 0;
-      }
-   }// You were missing a } here
-   else if(b>=a ) //You had elsif, that doesn't mean anything
-   {
-      if(b>=c)
-      {
-         return 1; // return instead of cout
-      }
-   }
-   else if(c>=b)
-   {
-     if(c>=a)
-      {
-        return 2;
-      }
-   }
+unsigned char minimum(unsigned char& x, unsigned char &y, unsigned char &z) {
+  if (x < y) {
+    if (x < z) return 0; 
+    else return 2;
+  } else {
+    if (y < z) return 1;  
+    else return 2;     
+  }  
 }
+
+unsigned char maximum (unsigned char& x,unsigned char& y,unsigned char& z) {
+  if (x > y) {
+    if (x > z) return 0; 
+    else return 2;
+  } else {
+    if (y > z) return 1;  
+    else return 2;     
+  } 
+}
+
 
 void vAvoidObstacles(void * param){
   for(;;)
   {
-  unsigned char  dist_l =leftUltraSonic;
-  unsigned char dist_m=midUltraSonic;
-  unsigned char dist_r=rightUltraSonic;
-//Serial.print("dist_l : ");
-//Serial.println(dist_l);
-//Serial.print("dist_m : ");
-//Serial.println(dist_m);
-//Serial.print("dist_r : ");
-//Serial.println(dist_r);
+  dist_l = leftUltraSonic;
+  dist_m = midUltraSonic;
+  dist_r = rightUltraSonic;
 
-  
-  /*unsigned char i = 0;*/
-  if ((dist_l<distanceTOAvoid)||(dist_m<distanceTOAvoid) || (dist_r<distanceTOAvoid)){
-    BrakeMotorLeft();
+  /* Obstacle at left */
+  if (dist_l < distanceTOAvoid) {
     BrakeMotorRight();
-    int tmp=10;
-      unsigned char maxReturned=maximum(dist_r,dist_m,dist_l);      
-    
-        if (maxReturned==0){ //right direction is good for robot now : 
-          //MotorDriverLeft(190,1);
-          MotorDriverLeft(defaultLeftRotatePWM,1);
-          BrakeMotorRight();
-          while(dist_l<distanceTOAvoid||dist_m<distanceTOAvoid){
-            MotorDriverLeft(defaultLeftRotatePWM,1);
-            dist_l =leftUltraSonic;
-            dist_m=midUltraSonic;
-            }
-    MotorDriverLeft(defaultLPWM,1);
-    MotorDriverRight(defaultRPWM,1);
-    }
-    else if (maxReturned==1){
-      //middle direction is good for robot now : 
-         MotorDriverLeft(defaultLPWM,1);
-         MotorDriverRight(defaultRPWM,1);
+    MotorDriverLeft(defaultLeftRotatePWM, 1);
 
+    while(dist_l < distanceTOAvoid || dist_m < distanceTOAvoid) {
+      MotorDriverLeft(defaultLeftRotatePWM, 1);
+      dist_l = leftUltraSonic;
+      dist_m = midUltraSonic;
+    }
+  }
+
+  /* Obstacle at right */
+  else if(dist_r < distanceTOAvoid) {
+    BrakeMotorLeft();
+    MotorDriverRight(defaultRightRotatePWM,1);
+    
+    while(dist_r < distanceTOAvoid || dist_m < distanceTOAvoid){
+      MotorDriverRight(defaultRightRotatePWM, 1);
+      dist_r = rightUltraSonic;
+      dist_m = midUltraSonic;
+    }
+  }
+
+  /* Obstacle at middle */
+  else if (dist_m < distanceTOAvoid) {
+    BrakeMotorRight();
+    BrakeMotorLeft();
+    dist_l = leftUltraSonic;
+    dist_r = rightUltraSonic;
+    if( dist_l > dist_r) {
+      MotorDriverRight(defaultRightRotatePWM,1);
+      while(dist_m < distanceTOAvoid) {
+        dist_m = midUltraSonic;
       }
-    else if (maxReturned==2){//left direction is good
-          MotorDriverRight(defaultRightRotatePWM,1);
-          //Serial.print("now better direction is left !! ");
-          BrakeMotorLeft();
-          while(dist_r<distanceTOAvoid||dist_m<distanceTOAvoid){
-            MotorDriverRight(defaultRightRotatePWM,1);
-            dist_r =rightUltraSonic;
-            dist_m=midUltraSonic;
-            }
+      MotorDriverLeft(defaultLPWM,1);
+      MotorDriverRight(defaultRPWM,1);     
+    } else if(dist_l <= dist_r) {
+        MotorDriverLeft(defaultLeftRotatePWM,1);
+        while(dist_m < distanceTOAvoid) {
+          dist_m = midUltraSonic;
+        }
+        MotorDriverLeft(defaultLPWM, 1);
+        MotorDriverRight(defaultRPWM, 1);    
+     }
+  }
+  else {
     MotorDriverLeft(defaultLPWM,1);
     MotorDriverRight(defaultRPWM,1);
-    }
-}
+  }
 
 vTaskDelay(2);  
 }
